@@ -1,0 +1,6 @@
+[local]
+localhost ansible_connection=local
+
+[web]
+# Replace with your server's IP or hostname
+# example.com ansible_user=your_username
