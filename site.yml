@@ -1,7 +1,80 @@
 ---
 - name: My First Playbook
   hosts: local
+  become: false  # Set to true if you need root privileges
+
   tasks:
-    - name: Print a welcome message
+    # ===== TASK 1: System Information =====
+    - name: T1 - Print a welcome message
       debug:
         msg: "Hello, Ansible! This is a simple test."
+
+    # ===== TASK 2: System Information =====
+    - name: T2 - Show OS details
+      debug:
+        msg: "This is a {{ ansible_distribution }} {{ ansible_distribution_version }} system"
+
+    # ===== TASK 3: File Operations =====
+    - name: T3 - Create a test directory
+      file:
+        path: ~/ansible-test
+        state: directory
+        mode: '0755'
+      register: dir_created
+
+    # ===== TASK 4: File Management =====
+    - name: T4 - Create a test file with system info
+      copy:
+        dest: ~/ansible-test/hello.txt
+        content: |
+          This file was created by Ansible
+          Current time: {{ ansible_date_time.iso8601 }}
+          System: {{ ansible_system }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+        mode: '0644'
+      when: dir_created.changed
+
+    # ===== TASK 5: Package Management =====
+    - name: T5 - Check if htop is installed
+      command: which htop
+      register: htop_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: T5 - Show htop installation status
+      debug:
+        msg: "htop is {{ 'installed' if htop_check.rc == 0 else 'not installed' }}"
+
+    # ===== TASK 6: System Monitoring =====
+    - name: T6 - Check disk usage
+      command: df -h /
+      register: disk_usage
+      changed_when: false
+
+    - name: T6 - Show root disk usage
+      debug:
+        msg: "{{ disk_usage.stdout }}"
+
+    # ===== TASK 7: User Information =====
+    - name: T7 - Get current user info
+      command: whoami
+      register: current_user
+      changed_when: false
+
+    - name: T7 - Show current user details
+      debug:
+        msg: |
+          Username: {{ current_user.stdout }}
+          Home Directory: {{ ansible_env.HOME }}
+          Shell: {{ ansible_env.SHELL }}
+
+    # ===== TASK 8: Network Information =====
+    - name: T8 - Get network interfaces
+      command: ifconfig -a
+      register: network_info
+      changed_when: false
+      ignore_errors: true  # In case ifconfig is not available
+
+    - name: T8 - Show network interfaces
+      debug:
+        msg: "{{ network_info.stdout | default('Network info not available') }}"
